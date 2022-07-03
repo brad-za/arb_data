@@ -26,5 +26,4 @@ FROM debian:buster-slim
 COPY --from=build /arb_data/target/release/arb_data .
 
 # set the startup command to run your binary
-CMD ["arb_data"]
-
+CMD ["./arb_data"]
