@@ -1,10 +1,42 @@
 use reqwest::Client;
 use rocket::serde::{json::Json, Deserialize, Serialize};
-use serde_json::{json, Error, Value};
 use std::fmt::Debug;
 extern crate dotenv;
 use dotenv::dotenv;
 use std::env;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Arb {
+    route: String,
+    input: f64,
+    usd: f64,
+    btc: f64,
+    output: f64,
+    profit: f64,
+    profit_perc: f64,
+}
+
+impl Arb {
+    fn new(
+        route: String,
+        input: f64,
+        usd: f64,
+        btc: f64,
+        output: f64,
+        profit: f64,
+        profit_perc: f64,
+    ) -> Arb {
+        Arb {
+            route,
+            input,
+            usd,
+            btc,
+            output,
+            profit,
+            profit_perc,
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Ticker {
@@ -209,19 +241,42 @@ async fn forrex(from: &str, to: String) -> Result<Json<Ticker>, Json<MyError>> {
     }
 }
 
+#[get("/arb/<input>")]
+async fn arb(input: usize) -> Result<Json<Arb>, Json<MyError>> {
+    let usdzar: Ticker = usd_zar("usd", "ZAR").await?;
+    let btczar: Ticker = zar_price("xbtzar").await?;
+    let btcusd: Ticker = usd_price("btcusd").await?;
+
+    let usd: f64 = input as f64 / usdzar.ask;
+    let btc_usd: f64 = usd / btcusd.ask;
+    let btc_zar: f64 = btc_usd * btczar.bid;
+
+    Ok(Json(Arb::new(
+        "ZAR->USD->BTC->ZAR".to_string(),
+        input as f64,
+        usd,
+        btc_usd,
+        btc_zar,
+        btc_zar - input as f64,
+        (((btc_zar - input as f64) / input as f64) * 100 as f64) as f64,
+    )))
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![crypto])
         .mount("/", routes![forrex])
+        .mount("/", routes![arb])
 }
 
 // #[tokio::main]
 // async fn main() {
-//     let usdzar = usd_zar("usd", "ZAR").await;
-//     let btczar = zar_price("xbtzar").await;
-//     let btcusd = usd_price("btcusd").await;
-//     println!("{:#?}", usdzar);
-//     println!("{:#?}", btczar);
-//     println!("{:#?}", btcusd);
+//     arb(200000).await;
+//     // let usdzar = usd_zar("usd", "ZAR").await;
+//     // let btczar = zar_price("xbtzar").await;
+//     // let btcusd = usd_price("btcusd").await;
+//     // println!("{:#?}", usdzar);
+//     // println!("{:#?}", btczar);
+//     // println!("{:#?}", btcusd);
 // }
