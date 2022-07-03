@@ -20,7 +20,7 @@ RUN rm ./target/release/deps/arb_data*
 RUN cargo build --release
 
 # our final base
-FROM debian:buster-slim
+FROM rust:latest
 
 # copy the build artifact from the build stage
 COPY --from=build /arb_data/target/release/arb_data .
