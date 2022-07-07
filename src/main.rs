@@ -106,7 +106,7 @@ impl From<serde_json::Error> for MyError {
 }
 
 async fn zar_price(sym: &str) -> Result<Ticker, MyError> {
-    let client = Client::new();
+    let client = Client::builder().use_rustls_tls().build()?;
     let luno_resp: LunoResp = client
         .get(format!(
             "https://api.luno.com/api/1/ticker?pair={}",
@@ -129,7 +129,8 @@ async fn zar_price(sym: &str) -> Result<Ticker, MyError> {
 async fn usd_zar(from: &str, to: &str) -> Result<Ticker, MyError> {
     dotenv().unwrap();
     let apikey = env::var("A").expect("missing alphaVantage api secret in .env file");
-    let client = Client::new();
+    // let client = Client::new();
+    let client = Client::builder().use_rustls_tls().build()?;
     let aa_resp: AA = client
         .get(format!("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={}&to_currency={}&apikey={}", from.to_uppercase(), to.to_uppercase(), apikey))
         .send()
@@ -147,7 +148,8 @@ async fn usd_zar(from: &str, to: &str) -> Result<Ticker, MyError> {
 }
 
 async fn usd_price(sym: &str) -> Result<Ticker, MyError> {
-    let client = Client::new();
+    // let client = Client::new();
+    let client = Client::builder().use_rustls_tls().build()?;
     let resp = client
         .get(format!(
             "https://api-pub.bitfinex.com/v2/ticker/t{}",
